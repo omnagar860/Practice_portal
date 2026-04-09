@@ -34,41 +34,41 @@
 //     }
 //     if(minLength(3,full_name,'string')) {
 //       console.log(full_name)
-//          return res.status(400).json({message :  `Full Name must be at least 3 charchter long.`}) 
+//          return res.status(400).json({message :  `Full Name must be at least 3 charchter long.`})
 //     }
 //     if(maxLength(100,full_name,'string')) {
-//          return res.status(400).json({message :  `Full Name must not grater than 100 charchter long.`}) 
+//          return res.status(400).json({message :  `Full Name must not grater than 100 charchter long.`})
 //     }
 //     if(!isValidEmail(email)) {
-//        return res.status(400).json({message :  `Please enter a valid email`}) 
-         
+//        return res.status(400).json({message :  `Please enter a valid email`})
+
 //     }
 //     if(minLength(8, password, "password")) {
-//        return res.status(400).json({message :  `Password must contain one uppercase ,lowercase , special character and one digit`}) 
-         
+//        return res.status(400).json({message :  `Password must contain one uppercase ,lowercase , special character and one digit`})
+
 //     }
 //     if(confirmPassword(password,confirm_password)){
-//        return res.status(400).json({message :  `Password doest match.`}) 
-         
+//        return res.status(400).json({message :  `Password doest match.`})
+
 //     }
 //     if(isValidMobile(mobile_number)){
-//        return res.status(400).json({message :`Please enter a valid mobile number`}) 
+//        return res.status(400).json({message :`Please enter a valid mobile number`})
 //     }
 //     if(isValidDOB(date_of_birth)){
-//        return res.status(400).json({message :`Applicant must be 18 years ols or elder.`}) 
-       
+//        return res.status(400).json({message :`Applicant must be 18 years ols or elder.`})
+
 //     }
 //     if(minLength(10,address,'string')){
-//        return res.status(400).json({message :`Address must be at least 10 characters long.`}) 
-     
+//        return res.status(400).json({message :`Address must be at least 10 characters long.`})
+
 //     }
 //     if(maxLength(100,address,'string')){
-//        return res.status(400).json({message :`Address must not be grater than 100 characters.`}) 
-       
+//        return res.status(400).json({message :`Address must not be grater than 100 characters.`})
+
 //     }
 //     if(minLength(6,pincode,'string')){
-//        return res.status(400).json({message :`Pincode must be 6 digit long.`}) 
-      
+//        return res.status(400).json({message :`Pincode must be 6 digit long.`})
+
 //     }
 //     console.log("level2")
 //     const hashedPassword = await hashPassword(password)
@@ -164,8 +164,7 @@ const userRegister = async (req, res) => {
     }
 
     // ✅ Full Name
-    let error =
-      minLength(3, full_name) || maxLength(100, full_name);
+    let error = minLength(3, full_name) || maxLength(100, full_name);
     if (error) return res.status(400).json({ message: error });
 
     // ✅ Email
@@ -189,23 +188,20 @@ const userRegister = async (req, res) => {
     if (error) return res.status(400).json({ message: error });
 
     // ✅ Address
-    error =
-      minLength(10, address) || maxLength(100, address);
+    error = minLength(10, address) || maxLength(100, address);
     if (error) return res.status(400).json({ message: error });
 
     // ✅ Pincode
     if (!/^\d{6}$/.test(pincode)) {
-      return res
-        .status(400)
-        .json({ message: "Pincode must be 6 digits" });
+      return res.status(400).json({ message: "Pincode must be 6 digits" });
     }
 
     // ✅ Hash password
     const hashedPassword = await hashPassword(password);
-// ✅ OTP Flow
+    // ✅ OTP Flow
     const otp = await generateOTP();
     const hashedOTP = await hashOTP(otp);
-    
+
     const userToBeCreate = {
       full_name,
       email,
@@ -216,11 +212,9 @@ const userRegister = async (req, res) => {
       district,
       address,
       pincode,
-      hashedOTP
+      hashedOTP,
     };
 
-    
-    
     await createUser(userToBeCreate);
 
     await saveOTP(email, hashedOTP);
@@ -234,5 +228,12 @@ const userRegister = async (req, res) => {
   }
 };
 
+const userlogin = async(req,res)=> {
+  try {
+    
+  } catch (error) {
+    
+  }
+}
 
-export { userRegister };
+export { userRegister,userlogin };

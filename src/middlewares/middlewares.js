@@ -1,78 +1,13 @@
-// const isEmpty = (str) => {
-// if(!str || str.trim()=== ""){
-//   return "Field is required"
-// }
-// return null
-// };
 
-// const isValidEmail = (email) => {
-//   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//   return regex.test(email);
-// };
+const isEmpty = (value) => {
+  if (value === undefined || value === null) {
+    return "Field is required";
+  }
 
-// const isValidMobile = (mobileNum) => {
-//   const regex = /^[0-9]{10}$/;
-//   return regex.test(mobileNum);
-// };
+  if (typeof value === "string" && value.trim() === "") {
+    return "Field is required";
+  }
 
-// const minLength = (min, text, type = "string") => {
-//   if (type === "string" && text.trim().length < min) {
-//     return `Minimum length must be ${min}`;
-//   }
-
-//   if (type === "password") {
-//     const passwordRegex =
-//       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-//     if (!passwordRegex.test(text)) {
-//       return "Password must contain uppercase, lowercase, number, and special character";
-//     }
-//   }
-
-//   return null;
-// };
-
-// const maxLength = (max, text) => {
-//   if (text.length > max) {
-//     return `Must not be greater than ${max} characters`;
-//   }
-//   return null;
-// };
-
-// const confirmPassword = (password, confirmPassword) => {
-//   if (password !== confirmPassword) {
-//     return "Passwords do not match";
-//   }
-//   return null;
-// };
-// const isValidDOB = (dob) => {
-//   const birthDate = new Date(dob);
-//   const today = new Date();
-
-//   const age = today.getFullYear() - birthDate.getFullYear();
-
-//   if (age < 18) {
-//     return "Must be at least 18 years old";
-//   }
-
-//   return null;
-// };
-
-
-// export {
-//   isEmpty,
-//   isValidEmail,
-//   isValidMobile,
-//   minLength,
-//   maxLength,
-//   confirmPassword,
-//   isValidDOB
-// };
-
-// middlewares/middlewares.js
-
-const isEmpty = (str) => {
-  if (!str || str.trim() === "") return "Field is required";
   return null;
 };
 
@@ -98,6 +33,41 @@ const maxLength = (max, text) => {
     ? `Maximum ${max} characters allowed`
     : null;
 };
+
+const hasInvalidSpecialChar =(str)=> {
+  const regex = /[^a-zA-Z0-9_&]/;
+  if(!regex.test(str)){
+    return `Specail characters are not allowed except & and _.`
+  }
+  return null;
+}
+
+const isValidAadhar = (aadhar)=> {
+  const regex = /^[0-9]{12}$/ ;
+  if(!regex.test(aadhar)){
+    return 'Please enter a valid 12 digit aadhar no.'
+  }
+  return null;
+}
+
+const isValidPAN = (pan)=> {
+  const regex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+  if(!pan) return `PAN Number is required.`
+  if(!regex.test(pan)){
+    return "Invalid PAN number format (e.g., ABCDE1234F)"
+  }
+  return null;
+}
+
+const validateFiles = (file,length)=> {
+  if(!file || file.length === 0) {
+    return `At least one document is required`
+  }
+  if(file.length > length) {
+    return `Maximum ${length} file can be uploaded`
+  }
+  return null
+}
 
 const validatePassword = (password) => {
   const regex =
@@ -129,4 +99,8 @@ export {
   validatePassword,
   confirmPassword,
   isValidDOB,
+  hasInvalidSpecialChar,
+  isValidAadhar,
+  isValidPAN,
+  validateFiles
 };

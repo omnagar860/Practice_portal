@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { VarChar } from "msnodesqlv8";
 import sql from "mssql/msnodesqlv8.js";
 import nodemailer from "nodemailer"
 
@@ -16,12 +17,12 @@ const createUser = async (user) => {
       .input("full_name", sql.VarChar(100), user.full_name)
       .input("email", sql.VarChar(255), user.email)
       .input("password", sql.VarChar(255), user.password)
-      .input("mobile_number", sql.VarChar(255), user.mobile_number)
+      .input("mobile_number", sql.VarChar(10), user.mobile_number)
       .input("date_of_birth", sql.Date, user.date_of_birth)
       .input("state", sql.VarChar(255), user.state)
       .input("district", sql.VarChar(255), user.district)
       .input("address", sql.VarChar(255), user.address)
-      .input("otp_hash", sql.VarChar(255), otpHash) 
+      .input("otp_hash", sql.VarChar(255), user.hashedOTP) 
       .input("pincode", sql.VarChar(6), user.pincode)
       .query(`
         INSERT INTO users 
@@ -36,31 +37,128 @@ const createUser = async (user) => {
     throw error;
   }
 };
-// const createUser = async (user) => {
-//   try {
-//     const pool = await sql.connect();
-//     const result = await pool
-//       .request()
-//       .input("full_name", sql.VarChar(100), user.full_name)
-//       .input("email", sql.VarChar(255), user.email)
-//       .input("password", sql.VarChar(255), user.password)
-//       .input("mobile_number", sql.VarChar(255), user.mobile_number)
-//       .input("date_of_birth", sql.Date, user.date_of_birth)
-//       .input("state", sql.VarChar(255), user.state)
-//       .input("district", sql.VarChar(255), user.district)
-//       .input("address", sql.VarChar(255), user.address)
-//       // .input("otp_hash", sql.VarChar, hashOTP)
-//       .input("pincode", sql.VarChar(6), user.pincode).query(`INSERT into users 
-//                             (full_name, email,password,mobile_number,date_of_birth,state, district,address,pincode)
-//                             VALUES
-//                             (@full_name, @email, @password, @mobile_number, @date_of_birth, @state, @district, @address, @pincode)
-//                              `);
-//     return result;
+
+const registerFactory = async (factoryData, documentPaths) => {
+    try {
+        const pool = await sql.connect();
+        const result = await pool
+            .request()
+            .input("user_id", sql.UniqueIdentifier, factoryData.user_id)
+            .input("factory_name", sql.VarChar(200), factoryData.factory_name)
+            .input("factory_address", sql.VarChar(500), factoryData.factory_address)
+            .input("factory_pincode", sql.VarChar(6), factoryData.factory_pincode)
+            .input("industry_type", sql.VarChar(50), factoryData.industry_type)
+            .input("owner_name", sql.VarChar(100), factoryData.owner_name)
+            .input("owner_aadhar", sql.VarChar(12), factoryData.owner_aadhar)
+            .input("owner_pan", sql.VarChar(10), factoryData.owner_pan)
+            .input("worker_count", sql.Int, factoryData.worker_count)
+            .input("factory_area_sqft", sql.Decimal(10, 2), factoryData.factory_area_sqft)
+            .input("established_year", sql.Int, factoryData.established_year)
+            // ✅ Document paths as individual columns
+            .input("aadhar_doc", sql.VarChar(500), documentPaths.aadhar_doc)
+            .input("pan_doc", sql.VarChar(500), documentPaths.pan_doc)
+            .input("building_plan_doc", sql.VarChar(500), documentPaths.building_plan_doc)
+            .input("gst_certificate_doc", sql.VarChar(500), documentPaths.gst_certificate_doc)
+            .input("msme_certificate_doc", sql.VarChar(500), documentPaths.msme_certificate_doc ?? null)
+            .query(`
+                INSERT INTO application_registration 
+                (
+                    user_id, factory_name, factory_address, factory_pincode,
+                    industry_type, owner_name, owner_aadhar, owner_pan,
+                    worker_count, factory_area_sqft, established_year,
+                    aadhar_doc, pan_doc
+                )
+                OUTPUT INSERTED.application_id
+                VALUES
+                (
+                    @user_id, @factory_name, @factory_address, @factory_pincode,
+                    @industry_type, @owner_name, @owner_aadhar, @owner_pan,
+                    @worker_count, @factory_area_sqft, @established_year,
+                    @aadhar_doc, @pan_doc
+                )
+            `);
+
+        return result.recordset[0].application_id;
+
+    } catch (error) {
+        console.log("Error while registering factory: " + error);
+        throw error;
+    }
+};
+
+// const factoryPlan = async(factoryPlanData, documentPath)=> {
+//     try {
+//   const pool = await sql.connect()
+//   const result = await   pool.request()
+//   .input("user_id", sql.UniqueIdentifier, factoryPlanData.user_id)
+//   //  .input("register_application_id", sql.UniqueIdentifier, factoryPlanData.register_application_id)
+//                         .input("plan_title", sql.VarChar(200), factoryPlanData.plan_title)
+//                         .input("plan_description", sql.VarChar(sql.MAX), factoryPlanData.plan_description)
+//                         .input("machinery_list", sql.NVarChar(sql.MAX), JSON.stringify(factoryPlanData.machinery_list))
+//                         // ✅ Store array as JSON string
+//                         .input("power_requirement_kw", sql.Decimal(10, 2), factoryPlanData.power_requirement_kw)
+//                         .input("water_requirement_liters", sql.Decimal(10, 2), factoryPlanData.water_requirement_liters)
+//                         .input("waste_management_plan", sql.VarChar(sql.MAX), factoryPlanData.waste_management_plan)
+//                         .input("blueprint_document", sql.VarChar(500), documentPath.blueprint_document)
+//                         .input("noc_document", sql.VarChar(500), documentPath.noc_documents)
+//                         .query(`
+//     INSERT INTO factory_plans
+//     (user_id, register_application_id, plan_title, plan_description, machinery_list,
+//      power_requirement_kw, water_requirement_liters, waste_management_plan,
+//      blueprint_document, noc_document)
+//     OUTPUT INSERTED.factory_plan_id
+//     VALUES
+//     (@user_id, @register_application_id, @plan_title, @plan_description, @machinery_list,
+//      @power_requirement_kw, @water_requirement_liters, @waste_management_plan,
+//      @blueprint_document, @noc_document)
+// `)
+//                             return result.recordset[0].factory_plan_id;
+                        
+
+    
 //   } catch (error) {
-//     console.error("Error while creating user " + error);
-//     throw error;
-//   }
-// };
+//         console.error("Error while saving factory plan:", error);
+//         throw error;
+//     }
+// }
+const factoryPlan = async (factoryPlanData, documentPath) => {
+    try {
+        const pool = await sql.connect();
+        const result = await pool.request()
+            .input("user_id", sql.UniqueIdentifier, factoryPlanData.user_id)
+            .input("plan_title", sql.VarChar(200), factoryPlanData.plan_title)
+            .input("plan_description", sql.VarChar(sql.MAX), factoryPlanData.plan_description)
+            .input("machinery_list", sql.NVarChar(sql.MAX), JSON.stringify(factoryPlanData.machinery_list))
+            .input("power_requirement_kw", sql.Decimal(10, 2), factoryPlanData.power_requirement_kw)
+            .input("water_requirement_liters", sql.Decimal(10, 2), factoryPlanData.water_requirement_liters)
+            .input("waste_management_plan", sql.VarChar(sql.MAX), factoryPlanData.waste_management_plan)
+            .input("blueprint_document", sql.VarChar(500), documentPath.blueprint_document)
+            .input("noc_document", sql.VarChar(500), documentPath.noc_document ?? null)
+            .query(`
+                INSERT INTO factory_plans
+                (
+                    user_id,
+                    plan_title, plan_description, machinery_list,
+                    power_requirement_kw, water_requirement_liters, waste_management_plan,
+                    blueprint_document, noc_document
+                )
+                OUTPUT INSERTED.factory_plan_id
+                VALUES
+                (
+                    @user_id,
+                    @plan_title, @plan_description, @machinery_list,
+                    @power_requirement_kw, @water_requirement_liters, @waste_management_plan,
+                    @blueprint_document, @noc_document
+                )
+            `);
+
+        return result.recordset[0].factory_plan_id;
+
+    } catch (error) {
+        console.error("Error while saving factory plan:", error);
+        throw error;
+    }
+};
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000);
@@ -80,7 +178,7 @@ const saveOTP = async (email, otpHash) => {
     .input("otp_hash", sql.VarChar(255), otpHash) // ✅ FIXED
     .input("expires_at", sql.DateTime, expiresAt)
     .query(`
-      INSERT INTO emial_verification (email, otp_hash, expires_at)
+      INSERT INTO email_verifications (email, otp_hash, expires_at)
       VALUES (@email, @otp_hash, @expires_at)
     `);
 };
@@ -114,4 +212,4 @@ const sendOtpEmail = async(email,otp)=> {
     })
 }
 
-export { hashPassword, createUser, generateOTP, saveOTP,hashOTP,sendOtpEmail };
+export { hashPassword, createUser, generateOTP, saveOTP,hashOTP,sendOtpEmail, registerFactory, factoryPlan };

@@ -64,7 +64,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
+    if (file.mimetype === "application/pdf" || file.mimetype ==="image/jpg" || file.mimetype ==="image/jpeg") {
         cb(null, true);
     } else {
         cb(new Error("Only PDF files are allowed"), false);
@@ -87,4 +87,9 @@ export const uploadDocs = upload.fields([
 export const uploadPlanDocs = upload.fields([
     {name : "blueprint_document", maxCount: 1},
     {name : "noc_documents", maxCount: 1},
+])
+export const uploadLicenceDocs = upload.fields([
+    {name : "affidavit_document", maxCount : 1},
+    {name : "photo_identity_document", maxCount : 1}
+
 ])

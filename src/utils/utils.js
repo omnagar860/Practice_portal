@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import { VarChar } from "msnodesqlv8";
 import sql from "mssql/msnodesqlv8.js";
 import nodemailer from "nodemailer"
 
@@ -57,11 +56,8 @@ const registerFactory = async (factoryData, documentPaths) => {
             // ✅ Document paths as individual columns
             .input("aadhar_doc", sql.VarChar(500), documentPaths.aadhar_doc)
             .input("pan_doc", sql.VarChar(500), documentPaths.pan_doc)
-            .input("building_plan_doc", sql.VarChar(500), documentPaths.building_plan_doc)
-            .input("gst_certificate_doc", sql.VarChar(500), documentPaths.gst_certificate_doc)
-            .input("msme_certificate_doc", sql.VarChar(500), documentPaths.msme_certificate_doc ?? null)
             .query(`
-                INSERT INTO application_registration 
+                INSERT INTO register_applications 
                 (
                     user_id, factory_name, factory_address, factory_pincode,
                     industry_type, owner_name, owner_aadhar, owner_pan,
@@ -86,41 +82,6 @@ const registerFactory = async (factoryData, documentPaths) => {
     }
 };
 
-// const factoryPlan = async(factoryPlanData, documentPath)=> {
-//     try {
-//   const pool = await sql.connect()
-//   const result = await   pool.request()
-//   .input("user_id", sql.UniqueIdentifier, factoryPlanData.user_id)
-//   //  .input("register_application_id", sql.UniqueIdentifier, factoryPlanData.register_application_id)
-//                         .input("plan_title", sql.VarChar(200), factoryPlanData.plan_title)
-//                         .input("plan_description", sql.VarChar(sql.MAX), factoryPlanData.plan_description)
-//                         .input("machinery_list", sql.NVarChar(sql.MAX), JSON.stringify(factoryPlanData.machinery_list))
-//                         // ✅ Store array as JSON string
-//                         .input("power_requirement_kw", sql.Decimal(10, 2), factoryPlanData.power_requirement_kw)
-//                         .input("water_requirement_liters", sql.Decimal(10, 2), factoryPlanData.water_requirement_liters)
-//                         .input("waste_management_plan", sql.VarChar(sql.MAX), factoryPlanData.waste_management_plan)
-//                         .input("blueprint_document", sql.VarChar(500), documentPath.blueprint_document)
-//                         .input("noc_document", sql.VarChar(500), documentPath.noc_documents)
-//                         .query(`
-//     INSERT INTO factory_plans
-//     (user_id, register_application_id, plan_title, plan_description, machinery_list,
-//      power_requirement_kw, water_requirement_liters, waste_management_plan,
-//      blueprint_document, noc_document)
-//     OUTPUT INSERTED.factory_plan_id
-//     VALUES
-//     (@user_id, @register_application_id, @plan_title, @plan_description, @machinery_list,
-//      @power_requirement_kw, @water_requirement_liters, @waste_management_plan,
-//      @blueprint_document, @noc_document)
-// `)
-//                             return result.recordset[0].factory_plan_id;
-                        
-
-    
-//   } catch (error) {
-//         console.error("Error while saving factory plan:", error);
-//         throw error;
-//     }
-// }
 const factoryPlan = async (factoryPlanData, documentPath) => {
     try {
         const pool = await sql.connect();
@@ -159,6 +120,36 @@ const factoryPlan = async (factoryPlanData, documentPath) => {
         throw error;
     }
 };
+
+const factoryLicencing = async(factoryLicenceData, documentsPath)=> {
+    try {
+        const pool = await sql.connect(); 
+    
+        const result = await pool.request()
+                                 .input("user_id",sql.UniqueIdentifier,factoryLicenceData.user_id)
+                                 .input("license_type",sql.VarChar(55),factoryLicenceData.license_type)
+                                 .input("requested_license_duration",sql.VarChar(55),factoryLicenceData.requested_license_duration)
+                                 .input("applicant_designation", sql.VarChar(100),factoryLicenceData.applicant_designation)
+                                //  .input("declaration_accepted", sql.Bit,factoryLicenceData.declaration_accepted )
+                                 .input("declaration_accepted", sql.Bit, factoryLicenceData.declaration_accepted === "true" ? 1 : factoryLicenceData.declaration_accepted ? 1 : 0)
+                                 .input("fee_payment_reference",sql.VarChar(50), factoryLicenceData.fee_payment_reference)
+                                 .input("affidavit_document", sql.VarChar(500),  documentsPath.affidavit_document)
+                                 .input("photo_identity_document", sql.VarChar(100), documentsPath.photo_identity_document)
+                                 .query(
+                                    `INSERT INTO factory_licence
+                                    (user_id,  license_type, requested_license_duration, applicant_designation, declaration_accepted, fee_payment_reference, affidavit_document, photo_identity_document)
+                                    OUTPUT INSERTED.factory_licence_id 
+                                    VALUES 
+                                    (@user_id, @license_type, @requested_license_duration, @applicant_designation, @declaration_accepted, @fee_payment_reference, @affidavit_document, @photo_identity_document)
+                                    `
+                                 )
+            return result.recordset[0].factory_licence_id;
+
+    } catch (error) {
+        console.log("Error while lincencing factory", error)
+        throw new Error("Error while lincencing factory", error)
+    }
+}
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000);
@@ -212,4 +203,4 @@ const sendOtpEmail = async(email,otp)=> {
     })
 }
 
-export { hashPassword, createUser, generateOTP, saveOTP,hashOTP,sendOtpEmail, registerFactory, factoryPlan };
+export { hashPassword, createUser, generateOTP, saveOTP,hashOTP,sendOtpEmail, registerFactory, factoryPlan ,factoryLicencing};

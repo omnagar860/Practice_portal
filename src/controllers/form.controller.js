@@ -8,7 +8,7 @@ import {
   minLength,
   validateFiles,
 } from "../middlewares/middlewares.js";
-import { factoryPlan, registerFactory } from "../utils/utils.js";
+import { factoryLicencing, factoryPlan, registerFactory } from "../utils/utils.js";
 
 const validFactoryType = [
   "manufacturing",
@@ -186,7 +186,6 @@ const factoryResgistrationForm = async (req, res) => {
       factory_application_id: factory_registraction_application_id,
     });
   } catch (error) {
-    // ✅ Don't throw - send proper error response
     console.error("Error while registering factory:", error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -278,13 +277,10 @@ const factoryPlanForm = async (req, res) => {
         };
 
         const planId = await factoryPlan(factoryPlanData, documentsPath);
-if(planId) {
-    console.log({ message: "Factory plan submitted successfully.",
-            factory_plan_id: planId})
-}
+
         res.status(201).json({
             message: "Factory plan submitted successfully.",
-            factory_plan_id: planId
+            factory_plan_id: planId,
         });
 
     } catch (error) {
@@ -293,89 +289,103 @@ if(planId) {
     }
 };
 
-// const factoryPlanForm = async (req, res) => {
-//   try {
-//     // res.status(200).send("factoryPlanForm working")
-//     const {
-//       plan_title,
-//       plan_description,
-//       machinery_list,
-//       power_requirement_kw,
-//       water_requirement_liters,
-//       waste_management_plan
-//     } = req.body;
-//     let error = minLength(5,plan_title) || maxLength(200,plan_title);
-//     if(error) return res.status(400).json({message : error})
-//     error = minLength(50, plan_description) || maxLength(2000, plan_description);
-//     if(error) return res.status(400).json({message : error});
-//     if(!Array.isArray(machinery_list) || machinery_list.length ===0){
-//         error = `Machinery list must be a non empty array.`
-//         return res.status(400).json({message : error})
-//     }
-//     for (let i = 0; i < machinery_list.length; i++) {
-//     const item = machinery_list[i];
+const licence_type = [
+  "factory",
+  "boiler",
+  "combined"
+]
+const isValidLicenceType = (license_type)=> {
+  if(!licence_type.includes(license_type?.toLowerCase())){
+    return `Please select a valid licence type.`
+  }
+  return null
+}
 
-//     if (!item.name || typeof item.name !== "string") {
-//         return res.status(400).json({ message: `Machinery ${i + 1}: Name is required.` });
-//     }
+const VALID_DURATIONS = ['1_year', '3_year', '5_year'];
 
-//     // ✅ Use Number() instead of typeof check
-//     if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
-//         return res.status(400).json({ message: `Machinery ${i + 1}: Quantity must be positive.` });
-//     }
+const isValidDuration = (requested_license_duration)=> {
+  if(!VALID_DURATIONS.includes(requested_license_duration)) {
+    return  "requested_license_duration must be one of: 1_year, 3_year, 5_year"
+  }
+  return null
+}
+const factoryLicence = async(req,res)=> {
+  try {
+    const user_id = "11111111-1111-1111-1111-111111111111";
+    const {license_type,requested_license_duration, applicant_designation, declaration_accepted, fee_payment_reference}   = req.body;
+    const fields = {license_type,requested_license_duration, applicant_designation, declaration_accepted, fee_payment_reference};
+    let error;
+    for(const[key,value ] of Object.entries(fields)) {
+      error = isEmpty(value)
+      if(error) {
+        return res.status(400).json({message:`${key} is required`});
+      }
+    }
+      error = isValidLicenceType(license_type);
+      if(error) return res.status(400).json({message: error});
 
-//     if (!item.power_kw || isNaN(Number(item.power_kw)) || Number(item.power_kw) <= 0) {
-//         return res.status(400).json({ message: `Machinery ${i + 1}: Power must be positive.` });
-//     }
-// }
-//        if(!power_requirement_kw || isNaN(power_requirement_kw)|| Number(power_requirement_kw) >=50000) {
-//         error = `Power requirement must not exceed 50000 limit.`;
-//         return res.status(400).json({message: error})
-//        }
-//        if(!water_requirement_liters || isNaN(water_requirement_liters) || Number(water_requirement_liters)<=0){
-//            error = `Water requirement must be positive.`
-//            return res.status(400).json({message: error})
-//        }
-//        if(!waste_management_plan ||  typeof waste_management_plan !=="string" ){
-//         error = `Waste management plan is required.`
-//         return res.status(400).json({message: error})
-//        }
-//        if(waste_management_plan.trim().length <50) {
-//         error = `Waste management plan must be at least 50 characters`
-//         return res.status(400).json({message : error})
-//        }
-//        const {blueprint_document,noc_documents} = req.files;
-//     //    console.log(blueprint_document,noc_documents)
-//        const allFiles = Object.values(req.files).flat();
-//        error = validateFiles(allFiles,2);
-//        if(error) {
-//            allFiles.forEach(f => fs.unlinkSync(f.path))
-//            return res.status(400).json({message : error})
-//        }
-//        const documentsPath = {
-//            blueprint_document : blueprint_document?.[0]?.path ?? null ,
-//            noc_documents : noc_documents?.[0]?.path ?? null
-//        }
-//        const user_id = "11111111-1111-1111-1111-111111111111";
-//        const factoryPlanData = {
-//     user_id,
-//     register_application_id,                             // from req.body
-//     plan_title,
-//     plan_description,
-//     machinery_list,
-//     power_requirement_kw: Number(power_requirement_kw),
-//     water_requirement_liters: Number(water_requirement_liters),
-//     waste_management_plan
-// };
+      error = isValidDuration(requested_license_duration);
+      if(error) return res.status(400).json({message: error});
+      
+      error = minLength(3,applicant_designation) || maxLength(200,applicant_designation);
+      if(error) return res.status(400).json({message: error});
 
-// const planId = await factoryPlan(factoryPlanData, documentsPath);
-//     //    console.log(documentsPath)
-//     res.status(201).json({
-//     message: "Factory plan submitted successfully.",
-//     factory_plan_id: planId
-// });
-    
-//   } catch (error) {}
-// };
+      error = declaration_accepted === true ? null : declaration_accepted === "true" ? null :'You must accept the declaration'
+      if(error) return res.status(400).json({message: error});
 
-export { factoryResgistrationForm, factoryPlanForm };
+      if(!/^[a-zA-Z0-9]{1,50}$/.test(fee_payment_reference)) {
+        error = `fee_payment_reference must be alphanumeric and max 50 chars`;
+        return res.status(400).json({message : error})
+      }
+
+      // validation fro files
+      const{affidavit_document, photo_identity_document} = req.files;
+      if(!affidavit_document || affidavit_document.length ===0) {
+        error= 'affidavit_document is required '
+        return res.status(400).json({message:error})
+      }
+      if(affidavit_document[0]?.mimetype !== "application/pdf") {
+        fs.unlinkSync(affidavit_document[0]?.path);
+        error = "affidavit_document must be a pdf";
+        return res.status(400).json({message:error})
+      }
+      if(affidavit_document[0]?.size > 5*1024*1024){
+        error = "affidavit_document must not exceed 5MB";
+        return res.status(400).json({message:error})
+      }
+
+      // validation for photo_identity_document 
+
+      if(!photo_identity_document || photo_identity_document.length ===0) {
+        error= 'photo_identity_document is required '
+        return res.status(400).json({message:error})
+      }
+      if(photo_identity_document[0]?.mimetype !== "image/jpg" && photo_identity_document[0]?.mimetype !== "image/jpeg") {
+        fs.unlinkSync(photo_identity_document[0]?.path);
+        error= "photo_identity_document must be a image";
+        return res.status(400).json({message:error})
+      }
+      if(photo_identity_document[0]?.size > 2*1024*1024){
+        error = "photo_identity_document must not exceed 2MB";
+        return res.status(400).json({message:error})
+      }
+
+      const factoryLicenceDocsPath = {
+        affidavit_document : affidavit_document[0]?.path,
+        photo_identity_document : photo_identity_document[0]?.path
+      }
+      const factoryLicenceData = {user_id, license_type,requested_license_duration, applicant_designation, declaration_accepted, fee_payment_reference}
+
+      const factoryLicenceId =   await factoryLicencing(factoryLicenceData, factoryLicenceDocsPath)
+
+      res.status(201).json({
+          message: "Licence application submitted successfully.",
+          factory_licence_id: factoryLicenceId
+      });
+  } catch (error) {
+    console.log("Error while factory licence form submitting.", error);
+    throw new Error("Internal Server Error : Error while factory licence form submitting.")
+  }
+}
+
+export { factoryResgistrationForm, factoryPlanForm ,factoryLicence};
